@@ -21,31 +21,35 @@ class RentalApp:
         self.notebook = ttk.Notebook(root)
         self.notebook.pack(pady=10, expand=True, fill='both')
 
-        # fix pour mac (clic onglet)
+        # fix pour mac
         self.notebook.bind('<<NotebookTabChanged>>', self.on_tab_change)
 
-        # onglets
+        # onglet 1 : parc
         self.tab_fleet = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab_fleet, text="🚗 Parc Automobile")
+        self.notebook.add(self.tab_fleet, text="🚗 Parc Auto")
         self.create_fleet_view()
 
+        # onglet 2 : louer
         self.tab_rent = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab_rent, text="📝 Nouvelle Location")
+        self.notebook.add(self.tab_rent, text="📝 Louer")
         self.create_rental_form()
 
-        # admin
+        # onglet 3 : retour (NOUVEAU)
+        self.tab_return = ttk.Frame(self.notebook)
+        self.notebook.add(self.tab_return, text="↩️ Retour")
+        self.create_return_view()
+
+        # onglet 4 : admin
         self.tab_admin = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab_admin, text="➕ Administration")
+        self.notebook.add(self.tab_admin, text="➕ Admin")
         self.create_admin_view()
         
         self.refresh_list()
 
     def on_tab_change(self, event):
-        # refresh au clic
         self.refresh_list()
 
     def setup_demo_data(self):
-        # fausses données
         print("--- Chargement des données ---")
         self.system.add_vehicle(Car("V01", "Peugeot", "208", "Eco", 45))
         self.system.add_vehicle(Truck("T01", "Volvo", "FH16", "Lourd", 200, 5000))
@@ -54,11 +58,12 @@ class RentalApp:
         self.system.add_customer(Customer(1, "Dupont", "Jean", 45, "B123"))
         self.system.add_customer(Customer(2, "Durand", "Kevin", 19, "B999"))
 
+    # --- VUES ---
+
     def create_fleet_view(self):
         lbl = ttk.Label(self.tab_fleet, text="État de la flotte en temps réel", font=("Arial", 14))
         lbl.pack(pady=10)
 
-        # colonnes
         cols = ("Type", "Marque", "Modèle", "Prix/J", "Info", "État")
         self.tree = ttk.Treeview(self.tab_fleet, columns=cols, show='headings')
         
@@ -68,226 +73,167 @@ class RentalApp:
 
         self.tree.pack(pady=10, fill="both", expand=True, padx=10)
         
-        # bouton refresh
-        ttk.Button(self.tab_fleet, text="Actualiser la liste", command=self.refresh_list).pack(pady=10)
+        ttk.Button(self.tab_fleet, text="Actualiser", command=self.refresh_list).pack(pady=10)
 
     def create_rental_form(self):
         frame = ttk.Frame(self.tab_rent)
         frame.pack(pady=10)
 
-        # liste des clients
-        ttk.Label(frame, text="1. Choisir le Client :").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        ttk.Label(frame, text="1. Client :").grid(row=0, column=0, sticky="w", padx=5, pady=5)
         self.combo_client = ttk.Combobox(frame, width=40, state="readonly") 
         self.combo_client.grid(row=1, column=0, padx=5, pady=0)
 
-        # liste vehicule
-        ttk.Label(frame, text="2. Choisir un Véhicule DISPONIBLE :").grid(row=2, column=0, sticky="w", padx=5, pady=(15, 5))
+        ttk.Label(frame, text="2. Véhicule DISPO :").grid(row=2, column=0, sticky="w", padx=5, pady=(15, 5))
         
-        # cadre liste
         list_frame = ttk.Frame(frame)
         list_frame.grid(row=3, column=0)
-        
-        self.list_vehicles = tk.Listbox(list_frame, height=8, width=50, selectmode='SINGLE')
+        self.list_vehicles = tk.Listbox(list_frame, height=6, width=50)
         self.list_vehicles.pack(side="left", fill="y")
-        
-        scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=self.list_vehicles.yview)
-        scrollbar.pack(side="right", fill="y")
-        self.list_vehicles.config(yscrollcommand=scrollbar.set)
+        sb = ttk.Scrollbar(list_frame, orient="vertical", command=self.list_vehicles.yview)
+        sb.pack(side="right", fill="y")
+        self.list_vehicles.config(yscrollcommand=sb.set)
 
-        # durée location
         ttk.Label(frame, text="3. Durée (jours) :").grid(row=4, column=0, sticky="w", padx=5, pady=(15, 5))
         self.entry_days = ttk.Entry(frame, width=10)
         self.entry_days.grid(row=5, column=0, sticky="w", padx=5)
 
-        # bouton valider
-        btn_action = ttk.Button(frame, text="✅ Valider la Location", command=self.process_rental)
-        btn_action.grid(row=6, column=0, pady=25)
-
-        # resultat
-        self.lbl_result = ttk.Label(frame, text="", foreground="blue", font=("Arial", 11, "bold"))
+        ttk.Button(frame, text="✅ Valider la Location", command=self.process_rental).grid(row=6, column=0, pady=25)
+        self.lbl_result = ttk.Label(frame, text="", foreground="blue")
         self.lbl_result.grid(row=7, column=0)
+
+    def create_return_view(self):
+        # onglet pour rendre la voiture et mettre penalité
+        frame = ttk.Frame(self.tab_return)
+        frame.pack(pady=20)
+
+        ttk.Label(frame, text="Choisir le véhicule à rendre (actuellement loué) :").pack(anchor="w")
+        
+        # liste des vehicules loués
+        list_frame = ttk.Frame(frame)
+        list_frame.pack(pady=5)
+        self.list_rented = tk.Listbox(list_frame, height=6, width=50)
+        self.list_rented.pack(side="left", fill="y")
+        
+        ttk.Label(frame, text="Pénalité (€) (Optionnel : retard, dégats...) :").pack(anchor="w", pady=(15,5))
+        self.entry_penalty = ttk.Entry(frame, width=10)
+        self.entry_penalty.pack(anchor="w")
+        self.entry_penalty.insert(0, "0") # 0 par defaut
+
+        ttk.Button(frame, text="🔙 Valider le Retour", command=self.process_return).pack(pady=20)
+        self.lbl_return_res = ttk.Label(frame, text="", foreground="blue")
+        self.lbl_return_res.pack()
 
     def create_admin_view(self):
         main_frame = ttk.Frame(self.tab_admin)
         main_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        # ajout client
-        frame_client = ttk.LabelFrame(main_frame, text=" Ajouter un Client ")
-        frame_client.pack(side="left", fill="both", expand=True, padx=10)
+        # client
+        f_cl = ttk.LabelFrame(main_frame, text="Ajouter Client"); f_cl.pack(side="left", fill="both", expand=True, padx=5)
+        ttk.Label(f_cl, text="Prénom:").pack(anchor="w"); self.e_fn = ttk.Entry(f_cl); self.e_fn.pack(fill="x")
+        ttk.Label(f_cl, text="Nom:").pack(anchor="w"); self.e_ln = ttk.Entry(f_cl); self.e_ln.pack(fill="x")
+        ttk.Label(f_cl, text="Age:").pack(anchor="w"); self.e_age = ttk.Entry(f_cl); self.e_age.pack(fill="x")
+        ttk.Label(f_cl, text="Permis:").pack(anchor="w"); self.e_lic = ttk.Entry(f_cl); self.e_lic.pack(fill="x")
+        ttk.Button(f_cl, text="Sauver Client", command=self.add_client).pack(pady=10)
 
-        ttk.Label(frame_client, text="Prénom :").pack(anchor="w", padx=5)
-        self.entry_c_first = ttk.Entry(frame_client); self.entry_c_first.pack(fill="x", padx=5)
+        # vehicule
+        f_ve = ttk.LabelFrame(main_frame, text="Ajouter Véhicule"); f_ve.pack(side="right", fill="both", expand=True, padx=5)
+        ttk.Label(f_ve, text="Type:").pack(anchor="w")
+        self.c_type = ttk.Combobox(f_ve, values=["Voiture", "Camion", "Moto"], state="readonly"); self.c_type.current(0); self.c_type.pack(fill="x")
+        ttk.Label(f_ve, text="Marque:").pack(anchor="w"); self.e_br = ttk.Entry(f_ve); self.e_br.pack(fill="x")
+        ttk.Label(f_ve, text="Modèle:").pack(anchor="w"); self.e_mo = ttk.Entry(f_ve); self.e_mo.pack(fill="x")
+        ttk.Label(f_ve, text="Prix:").pack(anchor="w"); self.e_pr = ttk.Entry(f_ve); self.e_pr.pack(fill="x")
+        ttk.Label(f_ve, text="Spec (CC/Kg):").pack(anchor="w"); self.e_sp = ttk.Entry(f_ve); self.e_sp.pack(fill="x")
+        ttk.Button(f_ve, text="Sauver Véhicule", command=self.add_vehicle).pack(pady=10)
 
-        ttk.Label(frame_client, text="Nom :").pack(anchor="w", padx=5)
-        self.entry_c_last = ttk.Entry(frame_client); self.entry_c_last.pack(fill="x", padx=5)
-
-        ttk.Label(frame_client, text="Âge :").pack(anchor="w", padx=5)
-        self.entry_c_age = ttk.Entry(frame_client); self.entry_c_age.pack(fill="x", padx=5)
-
-        ttk.Label(frame_client, text="Permis (ex: B) :").pack(anchor="w", padx=5)
-        self.entry_c_lic = ttk.Entry(frame_client); self.entry_c_lic.pack(fill="x", padx=5)
-
-        # bouton save client
-        ttk.Button(frame_client, text="💾 Sauvegarder Client", command=self.action_add_client).pack(pady=20)
-
-        # ajout vehicule
-        frame_veh = ttk.LabelFrame(main_frame, text=" Ajouter un Véhicule ")
-        frame_veh.pack(side="right", fill="both", expand=True, padx=10)
-
-        ttk.Label(frame_veh, text="Type :").pack(anchor="w", padx=5)
-        self.combo_v_type = ttk.Combobox(frame_veh, values=["Voiture", "Camion", "Moto"], state="readonly")
-        self.combo_v_type.current(0)
-        self.combo_v_type.pack(fill="x", padx=5)
-
-        ttk.Label(frame_veh, text="Marque :").pack(anchor="w", padx=5)
-        self.entry_v_brand = ttk.Entry(frame_veh); self.entry_v_brand.pack(fill="x", padx=5)
-
-        ttk.Label(frame_veh, text="Modèle :").pack(anchor="w", padx=5)
-        self.entry_v_model = ttk.Entry(frame_veh); self.entry_v_model.pack(fill="x", padx=5)
-
-        ttk.Label(frame_veh, text="Prix / Jour (€) :").pack(anchor="w", padx=5)
-        self.entry_v_price = ttk.Entry(frame_veh); self.entry_v_price.pack(fill="x", padx=5)
-
-        ttk.Label(frame_veh, text="Spécifique (CC ou Charge) :").pack(anchor="w", padx=5)
-        self.entry_v_spec = ttk.Entry(frame_veh); self.entry_v_spec.pack(fill="x", padx=5)
-
-        # bouton save vehicule
-        ttk.Button(frame_veh, text="💾 Sauvegarder Véhicule", command=self.action_add_vehicle).pack(pady=20)
+    # --- LOGIQUE ---
 
     def refresh_list(self):
-        # update tableau 
-        for row in self.tree.get_children():
-            self.tree.delete(row)
-            
+        # 1. parc
+        for row in self.tree.get_children(): self.tree.delete(row)
         for v in self.system.vehicles:
             etat = "DISPO" if v.is_available else "LOUE"
             if v.maintenance_due: etat = "MAINTENANCE"
-            
-            # affichage
-            type_v = "Voiture"
-            info = "-"
-            if isinstance(v, Truck): 
-                type_v = "Camion"
-                info = f"{v.max_load}kg"
-            elif isinstance(v, Motorcycle): 
-                type_v = "Moto"
-                info = f"{v.engine_cc}cc"
+            typ = "Voiture"
+            if isinstance(v, Truck): typ="Camion"
+            elif isinstance(v, Motorcycle): typ="Moto"
+            self.tree.insert("", "end", values=(typ, v.brand, v.model, f"{v.daily_rate}€", "-", etat))
 
-            self.tree.insert("", "end", values=(type_v, v.brand, v.model, f"{v.daily_rate}€", info, etat))
+        # 2. clients
+        cli = [f"{c.first_name} {c.last_name}" for c in self.system.customers]
+        self.combo_client['values'] = cli
         
-        # update liste clients
-        clients = [f"{c.first_name} {c.last_name} ({c.age} ans)" for c in self.system.customers]
-        self.combo_client['values'] = clients
-        
-        # update liste vehicule
+        # 3. vehicules dispo (pour louer)
         if hasattr(self, 'list_vehicles'):
-            self.list_vehicles.delete(0, tk.END) 
+            self.list_vehicles.delete(0, tk.END)
             dispos = self.system.report_available_vehicles()
-            
-            if not dispos:
-                self.list_vehicles.insert(tk.END, "--- AUCUN VÉHICULE DISPONIBLE ---")
-            else:
-                for v in dispos:
-                    self.list_vehicles.insert(tk.END, f"[{v.brand} {v.model}] - {v.daily_rate}€/j - ID:{v.vehicle_id}")
+            for v in dispos: self.list_vehicles.insert(tk.END, f"{v.brand} {v.model} - ID:{v.vehicle_id}")
 
-    def action_add_client(self):
-        try:
-            fn = self.entry_c_first.get()
-            ln = self.entry_c_last.get()
-            age = int(self.entry_c_age.get())
-            lic = self.entry_c_lic.get()
-            
-            if not fn or not ln: raise Exception("Nom incomplet")
-
-            new_id = len(self.system.customers) + 1
-            new_c = Customer(new_id, fn, ln, age, lic)
-            self.system.add_customer(new_c)
-            
-            messagebox.showinfo("OK", f"Client {fn} ajouté !")
-            self.refresh_list()
-            
-            # clean
-            self.entry_c_first.delete(0, tk.END)
-            self.entry_c_last.delete(0, tk.END)
-            self.entry_c_age.delete(0, tk.END)
-            self.entry_c_lic.delete(0, tk.END)
-
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Erreur saisie : {e}")
-
-    def action_add_vehicle(self):
-        try:
-            v_type = self.combo_v_type.get()
-            brand = self.entry_v_brand.get()
-            model = self.entry_v_model.get()
-            price = float(self.entry_v_price.get())
-            spec = self.entry_v_spec.get() 
-
-            # id auto
-            v_id = f"{v_type[0]}{len(self.system.vehicles)+1:02d}" 
-
-            if v_type == "Voiture":
-                new_v = Car(v_id, brand, model, "Standard", price)
-            elif v_type == "Camion":
-                new_v = Truck(v_id, brand, model, "Lourd", price, int(spec))
-            elif v_type == "Moto":
-                new_v = Motorcycle(v_id, brand, model, "Sport", price, int(spec))
-            
-            self.system.add_vehicle(new_v)
-            messagebox.showinfo("OK", f"{v_type} {brand} ajouté !")
-            self.refresh_list()
-            
-            # clean
-            self.entry_v_brand.delete(0, tk.END)
-            self.entry_v_model.delete(0, tk.END)
-
-        except Exception as e:
-            messagebox.showerror("Erreur", f"Vérifiez les valeurs. \n{e}")
+        # 4. vehicules loués (pour retour)
+        if hasattr(self, 'list_rented'):
+            self.list_rented.delete(0, tk.END)
+            loues = self.system.report_rented_vehicles()
+            if not loues: self.list_rented.insert(tk.END, "--- Rien à rendre ---")
+            for v in loues: self.list_rented.insert(tk.END, f"{v.brand} {v.model} - ID:{v.vehicle_id}")
 
     def process_rental(self):
         try:
-            # recup client
-            if self.combo_client.current() == -1:
-                raise Exception("Sélectionnez un client.")
-            customer_obj = self.system.customers[self.combo_client.current()]
-
-            # recup vehicule
-            selection = self.list_vehicles.curselection()
-            if not selection:
-                raise Exception("Veuillez cliquer sur un véhicule dans la liste.")
+            if self.combo_client.current() == -1: raise Exception("Client?")
+            c = self.system.customers[self.combo_client.current()]
             
-            text_line = self.list_vehicles.get(selection[0])
-            if "---" in text_line:
-                raise Exception("Aucun véhicule disponible.")
-
-            # extraction id
-            v_id = text_line.split("ID:")[-1]
-            vehicle_obj = next((v for v in self.system.vehicles if v.vehicle_id == v_id), None)
-
-            # duree
-            days_str = self.entry_days.get()
-            if not days_str.isdigit() or int(days_str) <= 0:
-                raise Exception("Durée invalide (entrez un chiffre > 0).")
+            sel = self.list_vehicles.curselection()
+            if not sel: raise Exception("Véhicule?")
+            vid = self.list_vehicles.get(sel[0]).split("ID:")[-1]
+            v = next(v for v in self.system.vehicles if v.vehicle_id == vid)
             
-            days = int(days_str)
-            start = datetime.now()
-            end = start + timedelta(days=days)
-
-            # backend
-            rental = self.system.rent_vehicle(customer_obj, vehicle_obj, start, end)
-
-            # succes
-            msg = f"✅ Location validée !\nVéhicule : {vehicle_obj.brand} {vehicle_obj.model}\nCoût total : {rental.total_cost}€"
-            messagebox.showinfo("Succès", msg)
-            self.lbl_result.config(text=f"Dernière action : Location OK ({rental.total_cost}€)", foreground="green")
-
-            # reset
+            d = int(self.entry_days.get())
+            start = datetime.now(); end = start + timedelta(days=d)
+            
+            r = self.system.rent_vehicle(c, v, start, end)
+            
+            messagebox.showinfo("OK", f"Loué! Coût estimé: {r.total_cost}€")
             self.refresh_list()
-            self.entry_days.delete(0, tk.END)
+        except Exception as e:
+            messagebox.showerror("Erreur", str(e))
+
+    def process_return(self):
+        try:
+            sel = self.list_rented.curselection()
+            if not sel: raise Exception("Sélectionner un véhicule à rendre")
+            txt = self.list_rented.get(sel[0])
+            if "---" in txt: return
+
+            vid = txt.split("ID:")[-1]
+            penal = float(self.entry_penalty.get())
+
+            # appel au backend
+            rental = self.system.return_vehicle(vid, penal)
+
+            msg = f"Retour confirmé !\nPrix de base : {rental.base_cost}€\nPénalité : {rental.penalty_cost}€\nTOTAL FINAL : {rental.total_cost}€"
+            messagebox.showinfo("Facture", msg)
+            self.lbl_return_res.config(text=f"Dernier retour: {rental.total_cost}€", foreground="green")
+            
+            self.refresh_list()
+            self.entry_penalty.delete(0, tk.END); self.entry_penalty.insert(0, "0")
 
         except Exception as e:
             messagebox.showerror("Erreur", str(e))
-            self.lbl_result.config(text=f"Erreur : {e}", foreground="red")
+
+    def add_client(self):
+        try:
+            self.system.add_customer(Customer(len(self.system.customers)+1, self.e_fn.get(), self.e_ln.get(), int(self.e_age.get()), self.e_lic.get()))
+            messagebox.showinfo("OK", "Client ajouté"); self.refresh_list()
+        except: messagebox.showerror("Erreur", "Vérifier champs")
+
+    def add_vehicle(self):
+        try:
+            t=self.c_type.get(); b=self.e_br.get(); m=self.e_mo.get(); p=float(self.e_pr.get()); s=int(self.e_sp.get())
+            vid = f"{t[0]}{len(self.system.vehicles)+1:02d}"
+            if t=="Voiture": v=Car(vid,b,m,"Std",p)
+            elif t=="Camion": v=Truck(vid,b,m,"Hv",p,s)
+            else: v=Motorcycle(vid,b,m,"Sp",p,s)
+            self.system.add_vehicle(v)
+            messagebox.showinfo("OK", "Véhicule ajouté"); self.refresh_list()
+        except: messagebox.showerror("Erreur", "Vérifier champs")
 
 if __name__ == "__main__":
     root = tk.Tk()

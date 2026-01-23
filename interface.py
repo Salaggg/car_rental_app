@@ -26,22 +26,22 @@ class RentalApp:
 
         # onglet 1 : parc
         self.tab_fleet = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab_fleet, text="🚗 Parc Auto")
+        self.notebook.add(self.tab_fleet, text=" Parc Auto")
         self.create_fleet_view()
 
         # onglet 2 : louer
         self.tab_rent = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab_rent, text="📝 Louer")
+        self.notebook.add(self.tab_rent, text=" Louer")
         self.create_rental_form()
 
         # onglet 3 : retour (NOUVEAU)
         self.tab_return = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab_return, text="↩️ Retour")
+        self.notebook.add(self.tab_return, text=" Retour")
         self.create_return_view()
 
         # onglet 4 : admin
         self.tab_admin = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab_admin, text="➕ Admin")
+        self.notebook.add(self.tab_admin, text=" Admin")
         self.create_admin_view()
         
         self.refresh_list()
@@ -97,7 +97,7 @@ class RentalApp:
         self.entry_days = ttk.Entry(frame, width=10)
         self.entry_days.grid(row=5, column=0, sticky="w", padx=5)
 
-        ttk.Button(frame, text="✅ Valider la Location", command=self.process_rental).grid(row=6, column=0, pady=25)
+        ttk.Button(frame, text=" Valider la Location", command=self.process_rental).grid(row=6, column=0, pady=25)
         self.lbl_result = ttk.Label(frame, text="", foreground="blue")
         self.lbl_result.grid(row=7, column=0)
 
@@ -119,7 +119,7 @@ class RentalApp:
         self.entry_penalty.pack(anchor="w")
         self.entry_penalty.insert(0, "0") # 0 par defaut
 
-        ttk.Button(frame, text="🔙 Valider le Retour", command=self.process_return).pack(pady=20)
+        ttk.Button(frame, text=" Valider le Retour", command=self.process_return).pack(pady=20)
         self.lbl_return_res = ttk.Label(frame, text="", foreground="blue")
         self.lbl_return_res.pack()
 
